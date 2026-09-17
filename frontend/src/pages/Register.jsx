@@ -1,0 +1,1 @@
+export default function Register() { return <section><h1>Inscription</h1><form><input required placeholder="Nom" /><input type="email" required placeholder="Email" /><button>S'inscrire</button></form></section>; }

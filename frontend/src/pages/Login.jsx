@@ -1,0 +1,1 @@
+export default function Login() { return <section><h1>Connexion</h1><form><input type="email" required placeholder="Email" /><input type="password" required placeholder="Mot de passe" /><button>Se connecter</button></form></section>; }

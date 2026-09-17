@@ -1,0 +1,1 @@
+export default function DocumentForm({ onSubmit }) { return <form onSubmit={onSubmit}><input name="title" required placeholder="Titre du document" /><button type="submit">Enregistrer</button></form>; }

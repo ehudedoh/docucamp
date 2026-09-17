@@ -1,0 +1,1 @@
+export default function Select({ options = [], ...props }) { return <select {...props}>{options.map(option => <option key={option.value ?? option} value={option.value ?? option}>{option.label ?? option}</option>)}</select>; }
