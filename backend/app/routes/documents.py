@@ -2,7 +2,8 @@ from flask import Blueprint, request, g
 from ..middleware.auth import require_auth
 from ..middleware.rate_limit import limiter
 from ..services.document_service import (
-    list_documents, get_document, create_document, update_document, delete_document, download_document
+    list_documents, get_document, create_document,
+    update_document, delete_document, download_document,
 )
 from ..services.report_service import create_report
 from ..utils.responses import success

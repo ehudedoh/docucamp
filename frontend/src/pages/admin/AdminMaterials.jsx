@@ -1,1 +1,57 @@
-export default function AdminMaterials() { return <section><h1>Administration du matériel</h1></section>; }
+import { useEffect, useState } from 'react'
+import { listPendingMaterials, setMaterialStatus, deleteAdminMaterial } from '../../services/admin.js'
+import Spinner from '../../components/ui/Spinner.jsx'
+import Badge from '../../components/ui/Badge.jsx'
+import { Check, X, Trash2 } from 'lucide-react'
+
+export default function AdminMaterials() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const load = () => {
+    setLoading(true)
+    listPendingMaterials()
+      .then((r) => setItems(r.data || []))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  const approve = async (id) => { await setMaterialStatus(id, 'PUBLISHED'); load() }
+  const reject = async (id) => { await setMaterialStatus(id, 'REJECTED'); load() }
+  const remove = async (id) => {
+    if (!confirm('Supprimer cette annonce ?')) return
+    await deleteAdminMaterial(id); load()
+  }
+
+  if (loading) return <div className="flex justify-center py-24"><Spinner size={32} /></div>
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Annonces en attente</h1>
+      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {items.length === 0 ? (
+        <p className="text-slate-500">Aucune annonce en attente.</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((m) => (
+            <div key={m.id} className="card p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-slate-900 truncate">{m.title}</p>
+                <p className="text-xs text-slate-500">{m.category} · {m.transaction_type}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge status={m.status} />
+                <button onClick={() => approve(m.id)} className="btn-primary text-xs"><Check size={14} /> Approuver</button>
+                <button onClick={() => reject(m.id)} className="btn-secondary text-xs"><X size={14} /> Refuser</button>
+                <button onClick={() => remove(m.id)} className="btn-danger text-xs"><Trash2 size={14} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,3 +1,9 @@
-import { apiFetch } from './api';
-export const getProfile = () => apiFetch('/profiles/me');
-export const updateProfile = data => apiFetch('/profiles/me', { method: 'PATCH', body: JSON.stringify(data) });
+import { apiFetch } from './api'
+
+export function getMe() {
+  return apiFetch('/profiles/me')
+}
+
+export function updateMe(payload) {
+  return apiFetch('/profiles/me', { method: 'PATCH', body: payload })
+}

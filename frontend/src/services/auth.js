@@ -1,3 +1,17 @@
-import { apiFetch } from './api';
-export const login = credentials => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
-export const register = data => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(data) });
+import { apiFetch } from './api'
+
+export function register(payload) {
+  return apiFetch('/auth/register', { method: 'POST', body: payload })
+}
+
+export function login(payload) {
+  return apiFetch('/auth/login', { method: 'POST', body: payload })
+}
+
+export function logout() {
+  return apiFetch('/auth/logout', { method: 'POST' })
+}
+
+export function me() {
+  return apiFetch('/auth/me')
+}

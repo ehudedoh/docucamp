@@ -1,2 +1,22 @@
-import { useEffect, useState } from 'react';
-export default function useFetch(fetcher, dependencies = []) { const [state, setState] = useState({ data: null, loading: true, error: null }); useEffect(() => { let active = true; setState(value => ({ ...value, loading: true })); fetcher().then(data => active && setState({ data, loading: false, error: null })).catch(error => active && setState({ data: null, loading: false, error })); return () => { active = false; }; }, dependencies); return state; }
+import { useEffect, useState } from 'react'
+
+export default function useFetch(fetcher, deps = []) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    Promise.resolve()
+      .then(fetcher)
+      .then((res) => { if (!cancelled) setData(res) })
+      .catch((err) => { if (!cancelled) setError(err) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
+
+  return { data, loading, error }
+}
