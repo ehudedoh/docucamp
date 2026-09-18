@@ -1,12 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { BookOpen, Package, User, LogOut, Menu, X, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { getDashboard } from '../../services/admin.js'
 
 export default function Navbar() {
   const { isAuthenticated, isAdmin, profile, logout } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Charge le compteur d'éléments en attente pour l'admin
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingCount(0)
+      return
+    }
+    const fetchCount = () => {
+      getDashboard()
+        .then((r) => {
+          const d = r.data || {}
+          setPendingCount(
+            (d.pending_documents || 0) +
+            (d.pending_materials || 0) +
+            (d.open_reports || 0)
+          )
+        })
+        .catch(() => {})
+    }
+    fetchCount()
+    const id = setInterval(fetchCount, 60_000)
+    return () => clearInterval(id)
+  }, [isAdmin])
 
   const handleLogout = async () => {
     await logout()
@@ -17,6 +42,13 @@ export default function Navbar() {
     `px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1 ${
       isActive ? 'bg-brand-600 text-white' : 'text-slate-700 hover:bg-slate-100'
     }`
+
+  const Badge = () =>
+    pendingCount > 0 ? (
+      <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold">
+        {pendingCount > 99 ? '99+' : pendingCount}
+      </span>
+    ) : null
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
@@ -41,6 +73,7 @@ export default function Navbar() {
               {isAdmin && (
                 <NavLink to="/admin" className={linkClass}>
                   <Shield size={16} /> Admin
+                  <Badge />
                 </NavLink>
               )}
               <NavLink to="/profile" className={linkClass}>
@@ -84,6 +117,7 @@ export default function Navbar() {
               {isAdmin && (
                 <NavLink to="/admin" className={linkClass} onClick={() => setOpen(false)}>
                   <Shield size={16} /> Admin
+                  <Badge />
                 </NavLink>
               )}
               <NavLink to="/profile" className={linkClass} onClick={() => setOpen(false)}>

@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout.jsx'
 import ProtectedRoute from './components/common/ProtectedRoute.jsx'
 import AdminRoute from './components/common/AdminRoute.jsx'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
+import AuditLogs from './pages/admin/AuditLogs.jsx'
 
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/admin/documents" element={<AdminDocuments />} />
             <Route path="/admin/materials" element={<AdminMaterials />} />
             <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/audit" element={<AuditLogs />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
