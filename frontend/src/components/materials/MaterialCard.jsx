@@ -3,16 +3,27 @@ import { Package } from 'lucide-react'
 import { formatPrice, formatDate } from '../../utils/formatters.js'
 import Badge from '../ui/Badge.jsx'
 
+const TX_LABEL = {
+  SALE: 'Vente',
+  RENT: 'Location',
+  DONATION: 'Don',
+}
+
 export default function MaterialCard({ material }) {
   const img = material.images?.[0]?.image_url
   return (
-    <Link to={`/materials/${material.id}`} className="card hover:shadow-md transition-shadow block">
-      <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
+    <Link to={`/materials/${material.id}`}
+      className="card hover:shadow-md transition-shadow block">
+      <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden relative">
         {img ? (
-          <img src={img} alt={material.title} className="w-full h-full object-cover" loading="lazy" />
+          <img src={img} alt={material.title}
+            className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <Package size={32} className="text-slate-300" />
         )}
+        <span className="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-medium text-slate-700">
+          {TX_LABEL[material.transaction_type] || material.transaction_type}
+        </span>
       </div>
       <div className="p-4">
         <h3 className="font-medium text-slate-900 line-clamp-2 mb-1">{material.title}</h3>
@@ -20,7 +31,7 @@ export default function MaterialCard({ material }) {
           {formatPrice(material.price, material.transaction_type)}
         </p>
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>{material.category}</span>
+          <span>{material.institution_name || material.category}</span>
           <span>{formatDate(material.created_at)}</span>
         </div>
         {material.status !== 'PUBLISHED' && (
