@@ -1,27 +1,28 @@
 # DocuCamp
 
-Plateforme de partage de documents et de matériel pédagogique.
+> Apprendre. Partager. S'équiper.
+
+PWA d'entraide académique et matérielle pour étudiants.
+
+## Stack
+
+- Frontend : React + JavaScript (Vite, Tailwind, Lucide)
+- Backend : Flask (REST API)
+- Base de données : PostgreSQL via Supabase
+- Auth : Supabase Auth
+- Stockage : Supabase Storage
 
 ## Structure
 
-- `frontend/`: application React/Vite
-- `backend/`: API Flask
-- `database/`: schéma, politiques, index et données initiales
+- `frontend/` — PWA React
+- `backend/` — API Flask
+- `database/` — schéma SQL, RLS, seed
 
-## Démarrage
+## Installation
 
+### Frontend
 ```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
-```
-
-Pour l'API :
-
-```bash
-cd backend
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-python run.py
-```
