@@ -3,6 +3,7 @@ from ..middleware.auth import require_admin
 from ..utils.supabase_client import get_supabase_admin
 from ..utils.responses import success
 from ..utils.errors import AppError
+from ..services.notification_service import create_notification
 
 bp = Blueprint("admin", __name__)
 
@@ -130,16 +131,46 @@ def all_documents():
 def set_document_status(doc_id):
     payload = request.get_json(silent=True) or {}
     status = payload.get("status")
+    reason = (payload.get("reason") or "").strip() or None
+
     if status not in ALLOWED_DOC_STATUS:
         raise AppError("Statut invalide.", 400)
+    if status == "REJECTED" and not reason:
+        raise AppError("Un motif de refus est obligatoire.", 400)
 
     supabase = get_supabase_admin()
+
+    # Récupérer le doc pour connaître l'uploader
+    doc_res = supabase.table("resources").select("id, title, uploaded_by").eq("id", doc_id).single().execute()
+    if not doc_res.data:
+        raise AppError("Document introuvable.", 404)
+    doc = doc_res.data
+
     res = supabase.table("resources").update({"status": status}).eq("id", doc_id).execute()
     if not res.data:
-        raise AppError("Document introuvable.", 404)
+        raise AppError("Échec mise à jour.", 500)
+
+    # Notification
+    if status == "PUBLISHED":
+        create_notification(
+            user_id=doc["uploaded_by"],
+            type_="DOCUMENT_APPROVED",
+            title="Document approuvé",
+            message=f"Votre document « {doc['title']} » est désormais publié.",
+            link=f"/documents/{doc_id}",
+        )
+    elif status == "REJECTED":
+        create_notification(
+            user_id=doc["uploaded_by"],
+            type_="DOCUMENT_REJECTED",
+            title="Document refusé",
+            message=f"Votre document « {doc['title']} » n'a pas été publié.",
+            link=f"/documents/{doc_id}",
+            reason=reason,
+        )
 
     _audit(g.profile["id"], f"DOC_{status}", "RESOURCE", doc_id,
-           metadata={"previous_status": payload.get("previous_status")})
+           metadata={"reason": reason})
     return success(res.data[0], message=f"Document {status}.")
 
 
@@ -228,15 +259,44 @@ def all_materials():
 def set_material_status(mat_id):
     payload = request.get_json(silent=True) or {}
     status = payload.get("status")
+    reason = (payload.get("reason") or "").strip() or None
+
     if status not in ALLOWED_MAT_STATUS:
         raise AppError("Statut invalide.", 400)
+    if status == "REJECTED" and not reason:
+        raise AppError("Un motif de refus est obligatoire.", 400)
 
     supabase = get_supabase_admin()
+
+    mat_res = supabase.table("materials").select("id, title, seller_id").eq("id", mat_id).single().execute()
+    if not mat_res.data:
+        raise AppError("Annonce introuvable.", 404)
+    mat = mat_res.data
+
     res = supabase.table("materials").update({"status": status}).eq("id", mat_id).execute()
     if not res.data:
-        raise AppError("Annonce introuvable.", 404)
+        raise AppError("Échec mise à jour.", 500)
 
-    _audit(g.profile["id"], f"MAT_{status}", "MATERIAL", mat_id)
+    if status == "PUBLISHED":
+        create_notification(
+            user_id=mat["seller_id"],
+            type_="MATERIAL_APPROVED",
+            title="Annonce approuvée",
+            message=f"Votre annonce « {mat['title']} » est publiée.",
+            link=f"/materials/{mat_id}",
+        )
+    elif status == "REJECTED":
+        create_notification(
+            user_id=mat["seller_id"],
+            type_="MATERIAL_REJECTED",
+            title="Annonce refusée",
+            message=f"Votre annonce « {mat['title']} » n'a pas été publiée.",
+            link=f"/materials/{mat_id}",
+            reason=reason,
+        )
+
+    _audit(g.profile["id"], f"MAT_{status}", "MATERIAL", mat_id,
+           metadata={"reason": reason})
     return success(res.data[0], message=f"Annonce {status}.")
 
 

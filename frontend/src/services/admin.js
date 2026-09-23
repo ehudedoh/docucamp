@@ -57,3 +57,17 @@ export function listAudit(params = {}) {
   ).toString()
   return apiFetch(`/admin/audit${qs ? `?${qs}` : ''}`)
 }
+
+export function setDocumentStatusWithReason(id, status, reason) {
+  return apiFetch(`/admin/documents/${id}/status`, {
+    method: 'PATCH',
+    body: { status, reason },
+  })
+}
+
+export function setMaterialStatusWithReason(id, status, reason) {
+  return apiFetch(`/admin/materials/${id}/status`, {
+    method: 'PATCH',
+    body: { status, reason },
+  })
+}

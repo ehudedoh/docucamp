@@ -9,6 +9,7 @@ import {
 } from '../../utils/constants.js'
 import Input from '../../components/ui/Input.jsx'
 import Select from '../../components/ui/Select.jsx'
+import { compressImage } from '../../utils/imageCompression.js'
 
 export default function CreateMaterial() {
   const navigate = useNavigate()
@@ -29,6 +30,8 @@ export default function CreateMaterial() {
 
   const onFileChange = async (e) => {
     const files = Array.from(e.target.files || [])
+    const compressed = await compressImage(file, 2, 1600)
+    const res = await uploadMaterialImage(compressed)
     if (!files.length) return
     if (images.length + files.length > 5) {
       setError('Maximum 5 images.')

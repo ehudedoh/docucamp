@@ -309,10 +309,11 @@ def download_document(doc_id):
 
     # Incrémenter le compteur (best effort)
     try:
-        supabase.table("resources").update(
-            {"download_count": (doc["download_count"] or 0) + 1}
-        ).eq("id", doc_id).execute()
+        from flask import g
+        if getattr(g, "profile", None):
+            supabase.table("download_history").insert({
+                "user_id": g.profile["id"],
+                "resource_id": doc_id,
+            }).execute()
     except Exception:
-        current_app.logger.warning("Impossible d'incrémenter download_count")
-
-    return {"url": url, "file_name": doc["file_name"]}
+        pass

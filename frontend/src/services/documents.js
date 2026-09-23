@@ -30,3 +30,15 @@ export function downloadDocument(id) {
 export function reportDocument(id, payload) {
   return apiFetch(`/documents/${id}/report`, { method: 'POST', body: payload })
 }
+
+export function myDownloads() {
+  return apiFetch('/documents/me/downloads')
+}
+
+export function myUploaded() {
+  return apiFetch('/documents/me/uploaded')
+}
+
+export function recordDownload(id) {
+  return apiFetch(`/documents/${id}/download-history`, { method: 'POST' })
+}

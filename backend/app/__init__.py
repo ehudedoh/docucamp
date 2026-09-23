@@ -34,6 +34,8 @@ def create_app(config_class=Config):
     from .routes.materials import bp as materials_bp
     from .routes.uploads import bp as uploads_bp
     from .routes.admin import bp as admin_bp
+    from .routes.favorites import bp as favorites_bp
+    from .routes.notifications import bp as notifications_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(profiles_bp, url_prefix="/api/profiles")
@@ -44,6 +46,8 @@ def create_app(config_class=Config):
     app.register_blueprint(materials_bp, url_prefix="/api/materials")
     app.register_blueprint(uploads_bp, url_prefix="/api/uploads")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(favorites_bp, url_prefix="/api/favorites")
+    app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
 
     # Gestion d'erreurs globale
     from .utils.errors import register_error_handlers

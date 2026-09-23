@@ -24,6 +24,10 @@ import AdminDocuments from './pages/admin/AdminDocuments.jsx'
 import AdminMaterials from './pages/admin/AdminMaterials.jsx'
 import AdminReports from './pages/admin/AdminReports.jsx'
 
+import Favorites from './pages/Favorites.jsx'
+import History from './pages/History.jsx'
+import Notifications from './pages/Notifications.jsx'
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -41,6 +45,9 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/documents/upload" element={<UploadDocument />} />
             <Route path="/materials/create" element={<CreateMaterial />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
 
           <Route element={<AdminRoute />}>

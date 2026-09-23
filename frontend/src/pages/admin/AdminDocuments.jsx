@@ -61,8 +61,10 @@ export default function AdminDocuments() {
 
   const approve = async (id) => { await setDocumentStatus(id, 'PUBLISHED'); load() }
   const reject = async (id) => {
-    if (!confirm('Refuser ce document ?')) return
-    await setDocumentStatus(id, 'REJECTED'); load()
+    const reason = window.prompt('Motif du refus (obligatoire) :')
+    if (!reason || !reason.trim()) return
+    await setDocumentStatusWithReason(id, 'REJECTED', reason.trim())
+    load()
   }
   const remove = async (id) => {
     if (!confirm('Supprimer définitivement ce document ?')) return
@@ -83,11 +85,10 @@ export default function AdminDocuments() {
             <button
               key={t.key || 'all'}
               onClick={() => changeTab(t.key)}
-              className={`px-3 py-2 text-sm font-medium border-b-2 inline-flex items-center gap-1 transition-colors ${
-                active
+              className={`px-3 py-2 text-sm font-medium border-b-2 inline-flex items-center gap-1 transition-colors ${active
                   ? 'border-brand-600 text-brand-600'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               <Icon size={14} /> {t.label}
             </button>

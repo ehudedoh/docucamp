@@ -74,6 +74,12 @@ export default function Profile() {
         </div>
       )}
 
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link to="/favorites" className="btn-secondary text-sm">Mes favoris</Link>
+        <Link to="/history" className="btn-secondary text-sm">Mon activité</Link>
+        <Link to="/notifications" className="btn-secondary text-sm">Notifications</Link>
+      </div>
+
       <form onSubmit={onSubmit} className="card p-6 space-y-4">
         <Input label="Nom complet" name="full_name" value={form.full_name || ''} onChange={onChange} required />
         <Input label="Email" name="email" value={form.email || ''} disabled />

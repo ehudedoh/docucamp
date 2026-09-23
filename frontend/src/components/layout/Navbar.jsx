@@ -3,6 +3,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { BookOpen, Package, User, LogOut, Menu, X, Shield } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { getDashboard } from '../../services/admin.js'
+import { Heart } from 'lucide-react'
+import NotificationBell from './NotificationBell.jsx'
 
 export default function Navbar() {
   const { isAuthenticated, isAdmin, profile, logout } = useAuth()
@@ -26,7 +28,7 @@ export default function Navbar() {
             (d.open_reports || 0)
           )
         })
-        .catch(() => {})
+        .catch(() => { })
     }
     fetchCount()
     const id = setInterval(fetchCount, 60_000)
@@ -39,8 +41,7 @@ export default function Navbar() {
   }
 
   const linkClass = ({ isActive }) =>
-    `px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1 ${
-      isActive ? 'bg-brand-600 text-white' : 'text-slate-700 hover:bg-slate-100'
+    `px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1 ${isActive ? 'bg-brand-600 text-white' : 'text-slate-700 hover:bg-slate-100'
     }`
 
   const Badge = () =>
@@ -69,7 +70,14 @@ export default function Navbar() {
           </NavLink>
 
           {isAuthenticated ? (
-            <>
+            <>{isAuthenticated && (
+              <>
+                <NavLink to="/favorites" className={linkClass}>
+                  <Heart size={16} /> Favoris
+                </NavLink>
+                <NotificationBell />
+              </>
+            )}
               {isAdmin && (
                 <NavLink to="/admin" className={linkClass}>
                   <Shield size={16} /> Admin
