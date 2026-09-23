@@ -110,13 +110,15 @@ export default function MaterialDetails() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Galerie */}
+        {/* Galerie */}
         <div>
-          <div className="card aspect-square bg-slate-100 flex items-center justify-center overflow-hidden mb-2">
+          <div className="card aspect-square bg-slate-50 flex items-center justify-center overflow-hidden mb-2">
             {images[activeImage]?.image_url ? (
               <img
                 src={images[activeImage].image_url}
                 alt={material.title}
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-full object-contain"
+                decoding="async"
               />
             ) : (
               <Package size={48} className="text-slate-300" />
@@ -129,16 +131,16 @@ export default function MaterialDetails() {
                   key={idx}
                   type="button"
                   onClick={() => setActiveImage(idx)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 ${
-                    idx === activeImage ? 'border-brand-600' : 'border-transparent'
-                  }`}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 bg-slate-50 flex items-center justify-center ${idx === activeImage ? 'border-brand-600' : 'border-transparent'
+                    }`}
                   aria-label={`Voir la photo ${idx + 1}`}
                 >
                   <img
                     src={img.image_url}
                     alt={`Vue ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain"
                     loading="lazy"
+                    decoding="async"
                   />
                 </button>
               ))}

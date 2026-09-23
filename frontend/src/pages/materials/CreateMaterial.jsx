@@ -30,7 +30,7 @@ export default function CreateMaterial() {
 
   const onFileChange = async (e) => {
     const files = Array.from(e.target.files || [])
-    const compressed = await compressImage(file, 2, 1600)
+    const compressed = await compressImage(file, 3, 2000)
     const res = await uploadMaterialImage(compressed)
     if (!files.length) return
     if (images.length + files.length > 5) {

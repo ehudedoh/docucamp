@@ -14,10 +14,15 @@ export default function MaterialCard({ material }) {
   return (
     <Link to={`/materials/${material.id}`}
       className="card hover:shadow-md transition-shadow block">
-      <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden relative">
+      <div className="aspect-video bg-slate-50 flex items-center justify-center overflow-hidden relative">
         {img ? (
-          <img src={img} alt={material.title}
-            className="w-full h-full object-cover" loading="lazy" />
+          <img
+            src={img}
+            alt={material.title}
+            className="max-w-full max-h-full object-contain"
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <Package size={32} className="text-slate-300" />
         )}
