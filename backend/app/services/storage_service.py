@@ -1,5 +1,6 @@
 import os
 import uuid
+from urllib.parse import quote
 from flask import current_app
 from werkzeug.utils import secure_filename
 
@@ -132,21 +133,39 @@ def upload_material_image(file, user_id: str) -> dict:
     }
 
 
-def create_signed_url(bucket: str, path: str, expires_in: int = 3600) -> str:
+def create_signed_url(bucket: str, path: str, expires_in: int = 3600,
+                      download_name: str | None = None) -> str:
     """
     Génère une URL signée temporaire pour un fichier privé.
-    Utilisé au téléchargement des documents.
+    - Retourne toujours une URL ABSOLUE (certaines versions du SDK renvoient
+      un chemin relatif « /object/sign/... »).
+    - Si `download_name` est fourni, Supabase répond avec
+      Content-Disposition: attachment → le navigateur télécharge au lieu
+      d'ouvrir le PDF dans l'onglet.
     """
     supabase = get_supabase_admin()
     try:
         res = supabase.storage.from_(bucket).create_signed_url(path, expires_in)
-        # Le SDK retourne {"signedURL": "..."} ou {"signedUrl": "..."} selon version
+        # Selon la version : {"signedURL": ...} / {"signedUrl": ...} / {"signed_url": ...}
         url = res.get("signedURL") or res.get("signedUrl") or res.get("signed_url")
-        if not url:
-            raise AppError("Impossible de générer l'URL.", 500)
-        return url
-    except AppError:
-        raise
     except Exception:
-        current_app.logger.exception("Erreur signed URL")
+        current_app.logger.exception("Erreur signed URL (bucket=%s, path=%s)", bucket, path)
+        raise AppError("Fichier introuvable ou URL de téléchargement indisponible.", 500)
+
+    if not url:
         raise AppError("Impossible de générer l'URL de téléchargement.", 500)
+
+    # URL relative → absolue
+    if not url.startswith("http"):
+        base = (current_app.config.get("SUPABASE_URL") or "").rstrip("/")
+        if not url.startswith("/"):
+            url = "/" + url
+        if not url.startswith("/storage/v1"):
+            url = "/storage/v1" + url
+        url = base + url
+
+    if download_name:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}download={quote(download_name)}"
+
+    return url

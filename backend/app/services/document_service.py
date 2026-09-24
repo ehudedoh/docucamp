@@ -285,35 +285,76 @@ def delete_document(doc_id, profile):
 # -------------------------------------------------------------
 # Téléchargement
 # -------------------------------------------------------------
-def download_document(doc_id):
+def download_document(doc_id, profile=None):
+    """
+    Prépare le téléchargement d'un document PUBLISHED.
+
+    Retourne { url, file_name, file_size } où `url` est une URL signée
+    temporaire (1 h) forçant le téléchargement (Content-Disposition: attachment).
+
+    Effets de bord « best effort » (ne cassent jamais le téléchargement) :
+      - incrément de download_count
+      - ajout dans download_history si l'utilisateur est connecté
+    """
     if not doc_id or len(doc_id) > 64:
         raise AppError("Identifiant invalide.", 400)
 
     supabase = get_supabase_admin()
-    res = (
-        supabase.table("resources")
-        .select("id, status, file_url, file_name, download_count")
-        .eq("id", doc_id)
-        .single()
-        .execute()
-    )
-    if not res.data:
+    try:
+        res = (
+            supabase.table("resources")
+            .select("id, status, file_url, file_name, file_size, download_count")
+            .eq("id", doc_id)
+            .limit(1)
+            .execute()
+        )
+        doc = res.data[0] if res and res.data else None
+    except Exception:
+        current_app.logger.exception("Lecture du document impossible (download)")
+        raise AppError("Document introuvable.", 404)
+    if not doc:
         raise AppError("Document introuvable.", 404)
 
-    doc = res.data
     if doc["status"] != "PUBLISHED":
         raise AppError("Document non disponible.", 403)
 
-    # URL signée temporaire
-    url = create_signed_url(DOCUMENTS_BUCKET, doc["file_url"], expires_in=3600)
+    if not doc.get("file_url"):
+        raise AppError("Aucun fichier associé à ce document.", 404)
 
-    # Incrémenter le compteur (best effort)
+    # URL signée temporaire (lève AppError si échec)
+    url = create_signed_url(
+        DOCUMENTS_BUCKET,
+        doc["file_url"],
+        expires_in=3600,
+        download_name=doc.get("file_name"),
+    )
+
+    # --- Compteur (best effort) ---
     try:
-        from flask import g
-        if getattr(g, "profile", None):
+        supabase.rpc("increment_download_count", {"p_resource_id": doc_id}).execute()
+    except Exception:
+        try:
+            supabase.table("resources").update(
+                {"download_count": (doc.get("download_count") or 0) + 1}
+            ).eq("id", doc_id).execute()
+        except Exception:
+            current_app.logger.warning("Compteur de téléchargements non mis à jour", exc_info=True)
+
+    # --- Historique (best effort, seulement si connecté) ---
+    if profile:
+        try:
             supabase.table("download_history").insert({
-                "user_id": g.profile["id"],
+                "user_id": profile["id"],
                 "resource_id": doc_id,
             }).execute()
-    except Exception:
-        pass
+        except Exception:
+            current_app.logger.warning(
+                "download_history non renseigné (table absente ? voir database/migrations)",
+                exc_info=True,
+            )
+
+    return {
+        "url": url,
+        "file_name": doc.get("file_name"),
+        "file_size": doc.get("file_size"),
+    }

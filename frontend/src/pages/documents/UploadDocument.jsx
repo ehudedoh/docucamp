@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Upload, AlertCircle, FileCheck } from 'lucide-react'
+import { Upload, AlertCircle, FileText } from 'lucide-react'
 import { createDocument } from '../../services/documents.js'
 import { uploadDocument } from '../../services/uploads.js'
 import { listInstitutions, listPrograms, listSubjects } from '../../services/institutions.js'
 import { RESOURCE_TYPES } from '../../utils/constants.js'
 import Input from '../../components/ui/Input.jsx'
 import Select from '../../components/ui/Select.jsx'
+import ProgressBar from '../../components/ui/ProgressBar.jsx'
+import { formatFileSize } from '../../utils/formatters.js'
 
 export default function UploadDocument() {
   const navigate = useNavigate()
@@ -21,7 +23,8 @@ export default function UploadDocument() {
   const [programs, setPrograms] = useState([])
   const [subjects, setSubjects] = useState([])
   const [error, setError] = useState(null)
-  const [progress, setProgress] = useState('')
+  const [stage, setStage] = useState('')            // libellé de l'étape en cours
+  const [uploadPercent, setUploadPercent] = useState(null)  // null = indéterminé / non démarré
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => { listInstitutions().then((r) => setInstitutions(r.data || [])) }, [])
@@ -36,6 +39,18 @@ export default function UploadDocument() {
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
+  const onPickFile = (e) => {
+    const picked = e.target.files?.[0] || null
+    setError(null)
+    if (!picked) { setFile(null); return }
+    // Certains navigateurs mobiles ne renseignent pas le type MIME
+    if (!picked.type && /\.pdf$/i.test(picked.name)) {
+      setFile(new File([picked], picked.name, { type: 'application/pdf' }))
+      return
+    }
+    setFile(picked)
+  }
+
   const onSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -45,12 +60,20 @@ export default function UploadDocument() {
     if (file.size > 20 * 1024 * 1024) { setError('Fichier trop volumineux (max 20 Mo).'); return }
 
     setSubmitting(true)
+    setUploadPercent(0)
     try {
-      setProgress('Envoi du fichier...')
-      const up = await uploadDocument(file)
+      setStage('Envoi du fichier')
+      const up = await uploadDocument(file, {
+        onProgress: ({ percent }) => {
+          setUploadPercent(percent)
+          // 100 % envoyé → le serveur enregistre encore le fichier
+          if (percent >= 100) setStage('Traitement par le serveur')
+        },
+      })
       const { file_url, file_name, file_size } = up.data
 
-      setProgress('Enregistrement du document...')
+      setStage('Enregistrement du document')
+      setUploadPercent(null)
       await createDocument({
         ...form,
         file_url,
@@ -62,11 +85,12 @@ export default function UploadDocument() {
         subject_id: form.subject_id || null,
       })
 
-      setProgress('Document soumis pour modération.')
+      setStage('Document soumis pour modération.')
       navigate('/documents')
     } catch (err) {
       setError(err.message)
-      setProgress('')
+      setStage('')
+      setUploadPercent(null)
     } finally {
       setSubmitting(false)
     }
@@ -82,9 +106,9 @@ export default function UploadDocument() {
         </div>
       )}
 
-      {progress && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700">
-          <FileCheck size={18} /> <span>{progress}</span>
+      {submitting && stage && (
+        <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
+          <ProgressBar value={uploadPercent} label={`${stage}…`} />
         </div>
       )}
 
@@ -137,14 +161,22 @@ export default function UploadDocument() {
         <div>
           <label htmlFor="file" className="label">Fichier PDF (max 20 Mo)</label>
           <input
-            id="file" type="file" accept="application/pdf"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            id="file" type="file" accept="application/pdf,.pdf"
+            onChange={onPickFile}
+            disabled={submitting}
             className="input"
           />
+          {file && (
+            <div className="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">
+              <FileText size={16} className="shrink-0 text-brand-600" />
+              <span className="truncate">{file.name}</span>
+              <span className="shrink-0 text-slate-500">({formatFileSize(file.size)})</span>
+            </div>
+          )}
         </div>
 
         <button type="submit" disabled={submitting} className="btn-primary">
-          <Upload size={18} /> {submitting ? 'Envoi...' : 'Soumettre pour modération'}
+          <Upload size={18} /> {submitting ? 'Envoi en cours...' : 'Soumettre pour modération'}
         </button>
       </form>
     </div>

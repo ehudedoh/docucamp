@@ -38,7 +38,3 @@ export function myDownloads() {
 export function myUploaded() {
   return apiFetch('/documents/me/uploaded')
 }
-
-export function recordDownload(id) {
-  return apiFetch(`/documents/${id}/download-history`, { method: 'POST' })
-}

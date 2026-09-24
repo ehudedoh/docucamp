@@ -1,13 +1,15 @@
-import { apiFetch } from './api.js'
+import { apiUpload } from './api.js'
 
-export function uploadDocument(file) {
+/** @param {File} file  @param {{onProgress?: Function, signal?: AbortSignal}} [opts] */
+export function uploadDocument(file, opts) {
   const fd = new FormData()
   fd.append('file', file)
-  return apiFetch('/uploads/document', { method: 'POST', body: fd })
+  return apiUpload('/uploads/document', fd, opts)
 }
 
-export function uploadMaterialImage(file) {
+/** @param {File} file  @param {{onProgress?: Function, signal?: AbortSignal}} [opts] */
+export function uploadMaterialImage(file, opts) {
   const fd = new FormData()
   fd.append('file', file)
-  return apiFetch('/uploads/material-image', { method: 'POST', body: fd })
+  return apiUpload('/uploads/material-image', fd, opts)
 }

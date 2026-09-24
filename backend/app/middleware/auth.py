@@ -43,6 +43,39 @@ def require_auth(fn):
     return wrapper
 
 
+def optional_auth(fn):
+    """
+    Comme require_auth mais ne bloque JAMAIS : si un token valide est présent,
+    g.profile est renseigné, sinon g.profile = None.
+    Utile pour les routes publiques qui enrichissent le comportement
+    quand l'utilisateur est connecté (ex : historique de téléchargements).
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        g.profile = None
+        token = _extract_token()
+        if token:
+            try:
+                supabase = get_supabase_admin()
+                user_res = supabase.auth.get_user(token)
+                if user_res and user_res.user:
+                    g.user = user_res.user
+                    g.token = token
+                    profile = (
+                        supabase.table("profiles")
+                        .select("id, role, full_name, email")
+                        .eq("id", user_res.user.id)
+                        .single()
+                        .execute()
+                    )
+                    g.profile = profile.data if profile else None
+            except Exception:
+                g.profile = None
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
 def require_admin(fn):
     @wraps(fn)
     @require_auth
