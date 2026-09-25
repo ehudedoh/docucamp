@@ -9,8 +9,8 @@ import Spinner from '../components/ui/Spinner.jsx'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function Profile() {
-  const { refreshProfile } = useAuth()
-  const [profile, setProfile] = useState(null)
+  const { refresh } = useAuth()
+  const [form, setForm] = useState(null)
   const [institutions, setInstitutions] = useState([])
   const [programs, setPrograms] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,51 +19,36 @@ export default function Profile() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [me, insts] = await Promise.all([getMe(), listInstitutions()])
-        setProfile(me.data)
-        setInstitutions(insts.data || [])
-        if (me.data?.institution_id) {
-          const progs = await listPrograms(me.data.institution_id)
-          setPrograms(progs.data || [])
-        }
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    Promise.all([getMe(), listInstitutions()])
+      .then(([me, inst]) => {
+        setForm(me.data)
+        setInstitutions(inst.data || [])
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [])
 
-  const onInstitutionChange = async (institutionId) => {
-    setProfile((p) => ({ ...p, institution_id: institutionId, program_id: null }))
-    if (!institutionId) {
-      setPrograms([])
-      return
-    }
-    try {
-      const progs = await listPrograms(institutionId)
-      setPrograms(progs.data || [])
-    } catch {
-      setPrograms([])
-    }
-  }
+  useEffect(() => {
+    if (!form?.institution_id) { setPrograms([]); return }
+    listPrograms(form.institution_id)
+      .then((r) => setPrograms(r.data || []))
+      .catch(() => setPrograms([]))
+  }, [form?.institution_id])
+
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
-    setSuccess(false)
-    setSaving(true)
+    setError(null); setSuccess(false); setSaving(true)
     try {
       await updateMe({
-        full_name: profile.full_name,
-        institution_id: profile.institution_id || null,
-        program_id: profile.program_id || null,
-        semester: profile.semester || null,
+        full_name: form.full_name,
+        phone: form.phone,
+        institution_id: form.institution_id || null,
+        program_id: form.program_id || null,
+        level: form.level || null,
       })
-      await refreshProfile()
+      await refresh()
       setSuccess(true)
     } catch (err) {
       setError(err.message)
@@ -72,59 +57,63 @@ export default function Profile() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner />
-      </div>
-    )
-  }
+  if (loading) return <div className="flex justify-center py-24"><Spinner size={32} /></div>
+  if (!form) return null
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Mon profil</h1>
+    <div className="max-w-2xl mx-auto px-4 py-12">
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Mon profil</h1>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      {error && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <AlertCircle size={18} /> <span>{error}</span>
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
+          <CheckCircle size={18} /> <span>Profil mis à jour.</span>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap gap-2">
         <Link to="/favorites" className="btn-secondary text-sm">Mes favoris</Link>
         <Link to="/history" className="btn-secondary text-sm">Mon activité</Link>
         <Link to="/notifications" className="btn-secondary text-sm">Notifications</Link>
       </div>
 
-      {error && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-          <AlertCircle size={18} /> {error}
-        </div>
-      )}
-      {success && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
-          <CheckCircle size={18} /> Profil mis à jour.
-        </div>
-      )}
+      <form onSubmit={onSubmit} className="card p-6 space-y-4">
+        <Input label="Nom complet" name="full_name" value={form.full_name || ''} onChange={onChange} required />
+        <Input label="Email" name="email" value={form.email || ''} disabled />
+        <Input label="Numéro WhatsApp" name="phone" value={form.phone || ''} onChange={onChange} required />
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        <Input
-          label="Nom complet"
-          value={profile.full_name || ''}
-          onChange={(e) => setProfile((p) => ({ ...p, full_name: e.target.value }))}
-        />
         <Select
           label="Établissement"
-          value={profile.institution_id || ''}
-          onChange={(e) => onInstitutionChange(e.target.value)}
+          name="institution_id"
+          value={form.institution_id || ''}
+          onChange={onChange}
+          placeholder="— Sélectionner —"
           options={institutions.map((i) => ({ value: i.id, label: i.name }))}
         />
+
         <Select
-          label="Filière"
-          value={profile.program_id || ''}
-          onChange={(e) => setProfile((p) => ({ ...p, program_id: e.target.value }))}
+          label="Filière / Programme"
+          name="program_id"
+          value={form.program_id || ''}
+          onChange={onChange}
+          placeholder="— Sélectionner —"
           options={programs.map((p) => ({ value: p.id, label: p.name }))}
+          disabled={!form.institution_id}
         />
-        <Input
-          label="Semestre"
-          type="number"
-          value={profile.semester || ''}
-          onChange={(e) => setProfile((p) => ({ ...p, semester: e.target.value }))}
+
+        <Select
+          label="Niveau"
+          name="level"
+          value={form.level || ''}
+          onChange={onChange}
+          placeholder="— Sélectionner —"
+          options={['L1', 'L2', 'L3', 'M1', 'M2', 'Doctorat'].map((l) => ({ value: l, label: l }))}
         />
+
         <button type="submit" disabled={saving} className="btn-primary">
           {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>
