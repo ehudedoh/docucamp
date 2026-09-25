@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, Package, User, LogOut, Menu, X, Shield } from 'lucide-react'
+import { BookOpen, Package, User, LogOut, Menu, X, Shield, Download } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { getDashboard } from '../../services/admin.js'
 import { Heart } from 'lucide-react'
 import NotificationBell from './NotificationBell.jsx'
+import Logo from '../common/Logo.jsx'
+import usePWAInstall from '../../hooks/usePWAInstall.js'
 
 export default function Navbar() {
   const { isAuthenticated, isAdmin, profile, logout } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  const { canInstall, install } = usePWAInstall()
 
   // Charge le compteur d'éléments en attente pour l'admin
   useEffect(() => {
@@ -54,11 +57,8 @@ export default function Navbar() {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <nav className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-bold text-slate-900">
-          <span className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center">
-            D
-          </span>
-          DocuCamp
+        <Link to="/" className="flex items-center" aria-label="DocuCamp — accueil">
+          <Logo />
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
@@ -100,6 +100,16 @@ export default function Navbar() {
               </NavLink>
             </>
           )}
+          {canInstall && (
+            <button
+              type="button"
+              onClick={install}
+              className="btn-secondary text-sm ml-1"
+              title="Installer l'application"
+            >
+              <Download size={16} /> Installer
+            </button>
+          )}
         </div>
 
         <button
@@ -120,6 +130,15 @@ export default function Navbar() {
           <NavLink to="/materials" className={linkClass} onClick={() => setOpen(false)}>
             <Package size={16} /> Matériel
           </NavLink>
+          {canInstall && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); install() }}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-brand-700 hover:bg-brand-50 inline-flex items-center gap-1"
+            >
+              <Download size={16} /> Installer l&apos;application
+            </button>
+          )}
           {isAuthenticated ? (
             <>
               {isAdmin && (
